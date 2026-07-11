@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecruitCheck — Real-time Job Offer & Recruiter Scam Analyzer</title>
+    <!-- Google Fonts: Inter & JetBrains Mono for Terminal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Nav -->
+        <header class="app-header">
+            <div class="logo-area">
+                <span class="logo-icon">🕵️‍♂️</span>
+                <div class="logo-text">
+                    <h1>RecruitCheck</h1>
+                    <p class="tagline">GhostRecruiter Scam Detection Engine</p>
+                </div>
+            </div>
+            <div class="model-badge">
+                <span class="pulse-indicator"></span>
+                Fine-Tuned DistilBERT Classifier + Llama 3.1
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <!-- Left Panel: Input & Quick Stats -->
+            <section class="input-panel glass-card">
+                <div class="card-header">
+                    <h2>Paste Outreach Message</h2>
+                    <span class="card-subtitle">Paste any recruiter email, LinkedIn message, SMS, or job offer description below.</span>
+                </div>
+                
+                <div class="input-container">
+                    <textarea id="message-input" placeholder="Example: 'Hello Dear! Earn $500 daily rating apps on our optimizer platform. Very easy task. Add our supervisor on Telegram @app_ranks_hr to start today...'"></textarea>
+                    
+                    <div class="example-buttons">
+                        <button type="button" class="btn-example" onclick="loadExample('scam1')">Example 1: App Task Scam</button>
+                        <button type="button" class="btn-example" onclick="loadExample('scam2')">Example 2: Equipment Check Scam</button>
+                        <button type="button" class="btn-example" onclick="loadExample('legit1')">Example 3: Legit Recruiter</button>
+                    </div>
+                </div>
+
+                <div class="action-bar">
+                    <button id="scan-btn" class="btn-primary">
+                        <span id="btn-text">Run Security Scan</span>
+                        <div id="btn-spinner" class="spinner hidden"></div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Right Panel: Verdict & Analysis -->
+            <section class="analysis-panel glass-card">
+                <!-- Welcome/Empty State -->
+                <div id="empty-state" class="empty-state">
+                    <div class="empty-icon">🛡️</div>
+                    <h3>Waiting for Analysis Input</h3>
+                    <p>Paste a message and click "Run Security Scan" to check for legitimacy, review flag explanations, and run the simulator.</p>
+                </div>
+
+                <!-- Analysis Results (Hidden by default) -->
+                <div id="results-state" class="results-state hidden">
+                    <div class="verdict-banner" id="verdict-banner">
+                        <div class="score-radial">
+                            <svg viewBox="0 0 36 36" class="circular-chart">
+                                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path id="score-circle" class="circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <text x="18" y="20.35" class="percentage" id="score-text">0%</text>
+                            </svg>
+                        </div>
+                        <div class="verdict-details">
+                            <span class="verdict-badge" id="verdict-badge">CRITICAL RISK</span>
+                            <h3 id="verdict-title">Scam Confirmed</h3>
+                            <p class="source-label">Analysis Model: <span id="verdict-source">DistilBERT Model v1</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Explanations Section -->
+                    <div class="analysis-section">
+                        <h4>Security Breakdown & Grounded Reasons</h4>
+                        <div id="reasoning-block" class="reasoning-block">
+                            <!-- Injected by JS -->
+                        </div>
+                        <ul id="flags-list" class="flags-list">
+                            <!-- Injected by JS -->
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Panel: Escalation Simulator -->
+        <section class="simulator-panel glass-card">
+            <div class="card-header">
+                <h2>Keep Talking Simulator</h2>
+                <span class="card-subtitle">Wonder what happens next? This simulator projects the scammer's conversational escalation playbook stages.</span>
+            </div>
+
+            <!-- Simulator Workspace -->
+            <div class="sim-workspace">
+                <!-- Chat Window -->
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <div class="chat-avatar">🤖</div>
+                        <div class="chat-user-info">
+                            <h4 id="sim-sender-name">Scammer Agent</h4>
+                            <span class="status-indicator">Online</span>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-bubble received system">
+                            <p>Enter a message above and run the verification scan. Once verified, you can simulate the scam playbook here.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulation Sidebar Control -->
+                <div class="sim-controls">
+                    <div class="control-box">
+                        <h3>Scam Playbook Roadmap</h3>
+                        <p class="desc">Scammers run a rigid, structured script to extract money or personal info. Step through the stages below:</p>
+                        
+                        <div class="sim-steps">
+                            <button class="btn-step" id="step-1-btn" disabled onclick="runSimulationStage(1)">
+                                <div class="step-num">1</div>
+                                <div class="step-info">
+                                    <h4>Stage 1: Platform Redirect</h4>
+                                    <p>Moving off email/LinkedIn to Telegram/WhatsApp.</p>
+                                </div>
+                            </button>
+
+                            <button class="btn-step" id="step-2-btn" disabled onclick="runSimulationStage(2)">
+                                <div class="step-num">2</div>
+                                <div class="step-info">
+                                    <h4>Stage 2: Low-Effort Task / Offer</h4>
+                                    <p>Trivial app rating tasks and fake PDF contracts.</p>
+                                </div>
+                            </button>
+
+                            <button class="btn-step" id="step-3-btn" disabled onclick="runSimulationStage(3)">
+                                <div class="step-num">3</div>
+                                <div class="step-info">
+                                    <h4>Stage 3: Invoice check fraud</h4>
+                                    <p>Depositing a bad check to pay a 'software supplier'.</p>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <button id="reset-sim-btn" class="btn-secondary" onclick="resetSimulator()" disabled>Reset Chat History</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>RecruitCheck Hackathon Demo. Built with FastAPI, Next-Gen UI Design, and PyTorch Fine-Tuning. For educational demonstration only.</p>
+        </footer>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
