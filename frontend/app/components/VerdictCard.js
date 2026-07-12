@@ -3,6 +3,9 @@
 import ScoreGauge from "./ScoreGauge";
 
 function getBadgeStyle(isScam, tier) {
+  if (tier === "INSUFFICIENT") {
+    return "bg-warning-soft text-warning border border-warning/20";
+  }
   if (tier === "SUSPICIOUS" || tier === "UNVERIFIED") {
     return "bg-warning-soft text-warning";
   }
