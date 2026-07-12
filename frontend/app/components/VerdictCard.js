@@ -19,33 +19,74 @@ export default function VerdictCard({ classification, explanation }) {
   const { is_scam, confidence, verdict_tier, source } = classification;
   const { red_flags, green_flags, verdict_reasoning } = explanation || {};
 
-  // Reconciliation Logic (Option A & B)
+  // Check if it's the too-short/insufficient length tier
+  const isInsufficient = verdict_tier === "INSUFFICIENT";
+
   let displayIsScam = is_scam;
   let displayConfidence = confidence;
   let displayTier = verdict_tier;
   let displayHeading = is_scam ? "Potential Scam Detected" : "Appears Legitimate";
 
-  if (explanation) {
+  if (explanation && !isInsufficient) {
     const redCount = red_flags?.length || 0;
     const greenCount = green_flags?.length || 0;
 
-    // Override if explanation flags clearly contradict classifier output
+    // 1. Reconciliation override if flag counts contradict classifier
     if (!is_scam && redCount > greenCount) {
       displayIsScam = true;
       displayTier = "SUSPICIOUS";
-      displayConfidence = 0.58; // Adjust to suspicious range
+      displayConfidence = 0.58;
       displayHeading = "Suspicious Outreach Detected";
     } else if (is_scam && greenCount > redCount) {
       displayIsScam = false;
       displayTier = "UNVERIFIED";
-      displayConfidence = 0.52; // Adjust to neutral range
+      displayConfidence = 0.52;
       displayHeading = "Unverified Outreach";
+    }
+
+    // 2. Stretch and calibrate the score so it isn't "nerfed"
+    let scaled = 0.5 + (displayConfidence - 0.5) * 1.8;
+
+    // 3. Dynamic boost based on clean flag indicators
+    if (displayIsScam) {
+      if (redCount > 0 && greenCount === 0) {
+        if (redCount === 1) scaled = Math.max(scaled, 0.78);
+        else if (redCount === 2) scaled = Math.max(scaled, 0.88);
+        else if (redCount >= 3) scaled = Math.max(scaled, 0.96);
+      }
+    } else {
+      if (greenCount > 0 && redCount === 0) {
+        if (greenCount === 1) scaled = Math.max(scaled, 0.78);
+        else if (greenCount >= 2) scaled = Math.max(scaled, 0.92);
+      }
+    }
+
+    // Clamp score safely between 0.51 and 0.98
+    displayConfidence = Math.min(Math.max(scaled, 0.51), 0.98);
+
+    // 4. Update the display tier based on the final scaled score
+    if (displayIsScam) {
+      if (displayConfidence > 0.85) {
+        displayTier = "CRITICAL_RISK";
+      } else if (displayConfidence > 0.60) {
+        displayTier = "HIGH_RISK";
+      } else {
+        displayTier = "SUSPICIOUS";
+      }
+    } else {
+      if (displayConfidence > 0.85) {
+        displayTier = "SAFE";
+      } else if (displayConfidence > 0.60) {
+        displayTier = "LOW_RISK";
+      } else {
+        displayTier = "UNVERIFIED";
+      }
     }
   }
 
   // Handle uncertainty threshold band (45% to 60%)
   const scorePct = Math.round(displayConfidence * 100);
-  if (scorePct >= 45 && scorePct <= 60) {
+  if (!isInsufficient && scorePct >= 45 && scorePct <= 60) {
     displayHeading = "Uncertain — Review Flags Below";
     if (displayTier !== "SUSPICIOUS" && displayTier !== "UNVERIFIED") {
       displayTier = displayIsScam ? "SUSPICIOUS" : "UNVERIFIED";
@@ -57,6 +98,7 @@ export default function VerdictCard({ classification, explanation }) {
       ? "border-danger/20 bg-danger-soft/40"
       : "border-warning/20 bg-warning-soft/30"
     : "border-success/20 bg-success-soft/40";
+
 
   return (
     <div className="space-y-5">
