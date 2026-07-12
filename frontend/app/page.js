@@ -43,21 +43,27 @@ export default function Home() {
   return (
     <div className="flex-1 flex flex-col">
       {/* ─── Header ─── */}
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🛡️</span>
+      <header className="border-b border-border backdrop-blur-sm">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
+          {/* Wordmark — no emoji */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent/15 ring-1 ring-accent/30">
+              <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4 text-accent" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 2L3 4.5v4C3 11.5 5.5 13.8 8 14.5c2.5-.7 5-3 5-6v-4L8 2z"/>
+                <path d="M6 8l1.5 1.5L10 6" strokeWidth="1.5"/>
+              </svg>
+            </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-foreground">
+              <h1 className="text-[15px] font-bold tracking-tight text-foreground leading-none">
                 RecruitCheck
               </h1>
-              <p className="text-[11px] text-muted">
-                AI-Powered Recruiter Scam Detection
+              <p className="text-[10px] text-muted mt-0.5">
+                AI-Powered Scam Detection
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-accent/25 bg-accent-soft px-3 py-1.5">
+          <div className="flex items-center gap-2 rounded-full border border-accent/20 bg-accent-soft px-3 py-1.5">
             <span
               className="h-1.5 w-1.5 rounded-full bg-accent"
               style={{ animation: "pulse-ring 1.6s infinite" }}
@@ -166,13 +172,17 @@ export default function Home() {
           <div className="rounded-2xl border border-border bg-surface p-6">
             {!classification && !scanning && (
               <div className="flex h-full flex-col items-center justify-center text-center py-12">
-                <span className="text-5xl mb-5 opacity-60">🔍</span>
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-elevated ring-1 ring-border">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-muted/60" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="7"/>
+                    <path d="m21 21-4.35-4.35"/>
+                  </svg>
+                </div>
                 <h3 className="text-sm font-semibold text-foreground">
-                  Waiting for Input
+                  Awaiting Analysis
                 </h3>
-                <p className="mt-1.5 max-w-[260px] text-xs text-muted">
-                  Paste a recruiter message and click &quot;Run Security
-                  Scan&quot; to analyze it.
+                <p className="mt-1.5 max-w-[240px] text-xs text-muted leading-relaxed">
+                  Paste a recruiter message and click &quot;Run Security Scan&quot; to get an instant verdict.
                 </p>
               </div>
             )}

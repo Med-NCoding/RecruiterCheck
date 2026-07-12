@@ -1,21 +1,32 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #06080F;
-  --color-surface: #0E1117;
-  --color-surface-elevated: #161B22;
-  --color-border: rgba(255, 255, 255, 0.06);
-  --color-border-hover: rgba(255, 255, 255, 0.12);
-  --color-foreground: #E6EDF3;
-  --color-muted: #8B949E;
-  --color-accent: #6366F1;
-  --color-accent-soft: rgba(99, 102, 241, 0.12);
-  --color-danger: #F85149;
-  --color-danger-soft: rgba(248, 81, 73, 0.12);
-  --color-success: #3FB950;
-  --color-success-soft: rgba(63, 185, 80, 0.12);
-  --color-warning: #D29922;
-  --color-warning-soft: rgba(210, 153, 34, 0.12);
+  /* Base */
+  --color-background: #080C14;
+  --color-surface: #0D1220;
+  --color-surface-elevated: #141A2C;
+
+  /* Borders */
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-border-hover: rgba(255, 255, 255, 0.14);
+
+  /* Text */
+  --color-foreground: #E2EAF4;
+  --color-muted: #7A8899;
+
+  /* Accent — electric teal/cyan */
+  --color-accent: #0EA5E9;
+  --color-accent-soft: rgba(14, 165, 233, 0.12);
+
+  /* Semantic */
+  --color-danger: #F87171;
+  --color-danger-soft: rgba(248, 113, 113, 0.12);
+  --color-success: #34D399;
+  --color-success-soft: rgba(52, 211, 153, 0.12);
+  --color-warning: #FBBF24;
+  --color-warning-soft: rgba(251, 191, 36, 0.12);
+
+  /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -26,56 +37,47 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Subtle grid pattern background */
+/* Ambient gradient mesh — more colourful and lively */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   background-image:
-    radial-gradient(at 20% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 100%, rgba(248, 81, 73, 0.05) 0px, transparent 50%);
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(14, 165, 233, 0.10) 0px, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(52, 211, 153, 0.07) 0px, transparent 55%),
+    radial-gradient(ellipse 50% 30% at 50% 50%, rgba(14, 165, 233, 0.03) 0px, transparent 70%);
   pointer-events: none;
   z-index: -1;
 }
 
 /* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.07); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.14); }
 
-/* Smooth transitions for interactive elements */
+/* Transitions */
 button, a, input, textarea {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Gauge circle animation */
+/* Gauge animation */
 .score-circle {
   transition: stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Typing dots */
 @keyframes bounce-dot {
-  0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
-  40% { transform: scale(1); opacity: 1; }
+  0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+  40%           { transform: scale(1); opacity: 1; }
 }
-
 .typing-dot:nth-child(1) { animation: bounce-dot 1.4s -0.32s infinite ease-in-out; }
 .typing-dot:nth-child(2) { animation: bounce-dot 1.4s -0.16s infinite ease-in-out; }
-.typing-dot:nth-child(3) { animation: bounce-dot 1.4s 0s infinite ease-in-out; }
+.typing-dot:nth-child(3) { animation: bounce-dot 1.4s 0s    infinite ease-in-out; }
 
-/* Pulse animation for status dot */
+/* Pulse ring for status indicator */
 @keyframes pulse-ring {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5); }
-  70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(99, 102, 241, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  0%   { transform: scale(0.95); box-shadow: 0 0 0 0   rgba(14, 165, 233, 0.55); }
+  70%  { transform: scale(1);    box-shadow: 0 0 0 6px rgba(14, 165, 233, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0   rgba(14, 165, 233, 0); }
 }
