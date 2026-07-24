@@ -1,32 +1,54 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const REQUEST_TIMEOUT_MS = 25000;
 
+async function requestJson(path, body) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      const detail = payload?.detail;
+
+      if (response.status === 503) {
+        throw new Error("The analysis service is temporarily unavailable. Please try again shortly.");
+      }
+
+      throw new Error(
+        typeof detail === "string"
+          ? detail
+          : "The analysis service could not complete this request. Please try again."
+      );
+    }
+
+    return response.json();
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("The analysis took too long to respond. Please try again.");
+    }
+    if (error instanceof TypeError) {
+      throw new Error("We could not reach the analysis service. Check your connection and try again.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 export async function classifyMessage(message) {
-  const res = await fetch(`${API_BASE}/api/classify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message }),
-  });
-  if (!res.ok) throw new Error(`Classification failed: ${res.statusText}`);
-  return res.json();
+  return requestJson("/api/classify", { message });
 }
 
 export async function explainVerdict(message, is_scam, confidence) {
-  const res = await fetch(`${API_BASE}/api/explain`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, is_scam, confidence }),
-  });
-  if (!res.ok) throw new Error(`Explanation failed: ${res.statusText}`);
-  return res.json();
+  return requestJson("/api/explain", { message, is_scam, confidence });
 }
 
 export async function simulateStage(message, stage) {
-  const res = await fetch(`${API_BASE}/api/simulate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, stage }),
-  });
-  if (!res.ok) throw new Error(`Simulation failed: ${res.statusText}`);
-  return res.json();
+  return requestJson("/api/simulate", { message, stage });
 }

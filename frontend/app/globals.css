@@ -1,163 +1,249 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* ─── Surfaces — warm slate grey ─── */
-  --color-background:       #EDEEF4;
-  --color-surface:          #F7F7FB;
-  --color-surface-elevated: #EDEDF6;
-
-  /* ─── Borders ─── */
-  --color-border:           rgba(109, 40, 217, 0.09);
-  --color-border-hover:     rgba(109, 40, 217, 0.22);
-
-  /* ─── Text ─── */
-  --color-foreground:       #1C1340;
-  --color-muted:            #7065A3;
-
-  /* ─── Accent – violet ─── */
-  --color-accent:           #7C3AED;
-  --color-accent-soft:      rgba(124, 58, 237, 0.09);
-
-  /* ─── Semantic ─── */
-  --color-danger:           #C82020;
-  --color-danger-soft:      rgba(200, 32, 32, 0.07);
-  --color-success:          #0A7C54;
-  --color-success-soft:     rgba(10, 124, 84, 0.08);
-  --color-warning:          #B45309;
-  --color-warning-soft:     rgba(180, 83, 9, 0.08);
-
-  /* ─── Fonts ─── */
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --color-background: #0a0c0f;
+  --color-surface: #15181d;
+  --color-surface-elevated: #1e2228;
+  --color-foreground: #f3f5f7;
+  --color-muted: #a2aab5;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-hover: rgba(255, 255, 255, 0.2);
+  --color-accent: #5ba7ff;
+  --color-accent-strong: #7bb9ff;
+  --color-accent-soft: #14263c;
+  --color-danger: #ff6872;
+  --color-danger-soft: #30191d;
+  --color-success: #52d6a5;
+  --color-success-soft: #132820;
+  --color-warning: #ffc15a;
+  --color-warning-soft: #2b2315;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
-html { color-scheme: light; }
+:root {
+  color-scheme: dark;
+  --page-gutter: clamp(1.25rem, 4vw, 2.5rem);
+  --content-width: 75rem;
+  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 22px 60px rgba(0, 0, 0, 0.28);
+  --shadow-float: 0 36px 100px rgba(0, 0, 0, 0.46);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+}
 
 body {
+  min-height: 100vh;
+  margin: 0;
   background: var(--color-background);
-  color:      var(--color-foreground);
-  font-family: var(--font-sans), "Plus Jakarta Sans", system-ui, sans-serif;
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Very faint ambient blobs — not dominant */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background-image:
-    radial-gradient(ellipse 65% 45% at 0%   0%,   rgba(124, 58, 237, 0.06) 0px, transparent 65%),
-    radial-gradient(ellipse 50% 38% at 100% 100%,  rgba(56, 189, 248, 0.05) 0px, transparent 60%);
-  pointer-events: none;
-  z-index: -1;
+button,
+input,
+textarea {
+  font: inherit;
 }
 
-/* ─── Scrollbar ─── */
-::-webkit-scrollbar        { width: 5px; }
-::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: rgba(124,58,237,0.15); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(124,58,237,0.30); }
-
-/* ─── Global transitions ─── */
-button, a, input, textarea {
-  transition: all 0.17s cubic-bezier(0.4, 0, 0.2, 1);
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ─── Gauge arc ─── */
-.score-circle {
-  transition: stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+::selection {
+  background: rgba(91, 167, 255, 0.3);
 }
 
-/* ─── Typing dots ─── */
+:focus-visible {
+  outline: 3px solid rgba(91, 167, 255, 0.45);
+  outline-offset: 3px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #4d5560;
+  background-clip: padding-box;
+}
+
+.app-container {
+  width: min(100%, var(--content-width));
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}
+
+.panel {
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: 1.75rem;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.eyebrow {
+  color: var(--color-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.brand-mark {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #07111d;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.brand-wordmark {
+  letter-spacing: -0.025em;
+}
+
+.status-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.hero-preview {
+  box-shadow: 0 35px 100px rgba(0, 0, 0, 0.5);
+}
+
+.glass-nav {
+  background: rgba(10, 12, 15, 0.82);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+.hero-shell {
+  background:
+    radial-gradient(circle at 50% 5%, rgba(91, 167, 255, 0.18), transparent 34rem),
+    linear-gradient(180deg, #0d1117 0%, var(--color-background) 100%);
+}
+
+.analyzer-shell {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(91, 167, 255, 0.1), transparent 28rem),
+    #0b0e12;
+}
+
+.content-shell {
+  background: linear-gradient(180deg, #10141a 0%, #0c0f13 100%);
+}
+
+.apple-link {
+  color: var(--color-accent);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: color 160ms ease;
+}
+
+.apple-link:hover {
+  color: var(--color-accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes bounce-dot {
-  0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
-  40%           { transform: scale(1); opacity: 1;   }
-}
-.typing-dot:nth-child(1) { animation: bounce-dot 1.4s -0.32s infinite ease-in-out; }
-.typing-dot:nth-child(2) { animation: bounce-dot 1.4s -0.16s infinite ease-in-out; }
-.typing-dot:nth-child(3) { animation: bounce-dot 1.4s  0s    infinite ease-in-out; }
-
-/* ─── Status-dot pulse ─── */
-@keyframes pulse-ring {
-  0%   { transform: scale(0.95); box-shadow: 0 0 0 0   rgba(124, 58, 237, 0.45); }
-  70%  { transform: scale(1);    box-shadow: 0 0 0 5px rgba(124, 58, 237, 0);    }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0   rgba(124, 58, 237, 0);    }
+  0%, 80%, 100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
 }
 
-/* ─── App header wordmark — very subtle purple gradient ─── */
-.logo-text {
-  background: linear-gradient(110deg, #5B21B6 0%, #7C3AED 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.intro-reveal {
+  animation: intro-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--delay, 0ms);
 }
 
-/* ─── Landing screen title — solid dark, Space Grotesk, no gradient ─── */
-.landing-title {
-  font-family: var(--font-display), "Space Grotesk", system-ui, sans-serif;
-  color: #18102E;
-  letter-spacing: -0.03em;
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface-elevated);
 }
 
-/* ════════════════════════════════════════
-   SPLASH / LANDING SCREEN ANIMATIONS
-   ════════════════════════════════════════ */
-
-/* 1. Title drops in from above */
-@keyframes title-drop {
-  0%   { opacity: 0; transform: translateY(-40px) scale(0.93); }
-  65%  { opacity: 1; transform: translateY(5px)   scale(1.02); }
-  100% { opacity: 1; transform: translateY(0)     scale(1);    }
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.09), transparent);
+  animation: skeleton-sweep 1.3s ease-in-out infinite;
+  transform: translateX(-100%);
 }
 
-/* 2. Left phrase slides in from the left — clipped by parent overflow-hidden */
-@keyframes slide-from-left {
-  from { transform: translateX(-110%); }
-  to   { transform: translateX(0); }
+@keyframes skeleton-sweep {
+  to {
+    transform: translateX(100%);
+  }
 }
 
-/* 3. Right phrase slides in from the right — clipped by parent overflow-hidden */
-@keyframes slide-from-right {
-  from { transform: translateX(110%); }
-  to   { transform: translateX(0); }
+.typing-dot {
+  animation: bounce-dot 1.2s infinite ease-in-out;
 }
 
-/* 4. Button fades + rises */
-@keyframes btn-rise {
-  from { opacity: 0; transform: translateY(22px); }
-  to   { opacity: 1; transform: translateY(0);    }
+.typing-dot:nth-child(2) {
+  animation-delay: 120ms;
 }
 
-/* 5. Divider line grows */
-@keyframes line-grow {
-  from { transform: scaleX(0); opacity: 0; }
-  to   { transform: scaleX(1); opacity: 1; }
+.typing-dot:nth-child(3) {
+  animation-delay: 240ms;
 }
 
-/* 6. Exit — curtain sweeps UP revealing the app below */
-@keyframes splash-exit {
-  0%   { opacity: 1; transform: translateY(0)    scale(1);    }
-  30%  { opacity: 1; transform: translateY(-8px) scale(0.99); }
-  100% { opacity: 0; transform: translateY(-60px) scale(0.96); }
+@media (max-width: 640px) {
+  .panel {
+    border-radius: 1.35rem;
+  }
 }
 
-/* 7. Main app content enters — slides up from just below */
-@keyframes app-enter {
-  from { opacity: 0; transform: translateY(32px); }
-  to   { opacity: 1; transform: translateY(0);    }
-}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 
-/* 8. Scroll caret bouncing down */
-@keyframes caret-bounce {
-  0%, 100% { transform: translateY(0);   opacity: 0.4; }
-  50%       { transform: translateY(7px); opacity: 0.9; }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-
-/* ─── Applied classes ─── */
-.anim-title     { animation: title-drop       0.80s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.anim-left      { animation: slide-from-left  0.65s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.anim-right     { animation: slide-from-right 0.65s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.anim-btn       { animation: btn-rise         0.55s cubic-bezier(0.22, 1, 0.36, 1) both; opacity: 0; }
-.anim-line      { animation: line-grow        0.50s ease both; opacity: 0; }
-.anim-exit      { animation: splash-exit      0.60s cubic-bezier(0.55, 0, 1, 0.8) forwards; pointer-events: none; }
-.anim-app-enter { animation: app-enter        0.60s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both; }
-.anim-caret     { animation: caret-bounce     1.4s  ease-in-out infinite; }

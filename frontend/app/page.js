@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { classifyMessage, explainVerdict } from "./lib/api";
-import { EXAMPLES } from "./lib/constants";
-import VerdictCard from "./components/VerdictCard";
+import AnalyzerForm from "./components/AnalyzerForm";
+import AnalysisPanel from "./components/AnalysisPanel";
 import Simulator from "./components/Simulator";
-import LandingScreen from "./components/LandingScreen";
 
-// Minimum character threshold for a meaningful analysis
 const MIN_CHARS = 80;
 
-// Synthetic "too-short" result objects
 const TOO_SHORT_CLASSIFICATION = {
   is_scam: false,
   confidence: 0.55,
@@ -22,66 +19,96 @@ const TOO_SHORT_EXPLANATION = {
   red_flags: [],
   green_flags: [],
   verdict_reasoning:
-    "The message is too short to be reliably analyzed. Scam detection requires enough context. " +
-    "Recruiter messages typically include a job description, pay rate, or next steps. " +
-    "Please paste the full message for an accurate verdict. A neutral score of 55% has been assigned.",
+    "There is not enough context to evaluate this outreach. Include the role, compensation, contact method, and requested next steps before relying on an assessment.",
 };
 
+const STEPS = [
+  {
+    number: "01",
+    title: "Paste the outreach.",
+    description: "Add the full email, text, direct message, or job offer. More context creates a more useful assessment.",
+    className: "border border-accent/20 bg-[#121d2d]",
+  },
+  {
+    number: "02",
+    title: "See the signals.",
+    description: "RecruiterCheck separates suspicious tactics from conventional recruiting cues and explains both clearly.",
+    className: "border border-white/10 bg-[#1b1e24]",
+  },
+  {
+    number: "03",
+    title: "Verify with confidence.",
+    description: "Get a practical next step, then confirm the sender through the employer’s official website before replying.",
+    className: "border border-success/20 bg-[#10231d]",
+  },
+];
+
 export default function Home() {
-  const [showLanding, setShowLanding] = useState(true);
-  const [entered, setEntered] = useState(false);
-  const [message, setMessage]           = useState("");
-  const [scanning, setScanning]         = useState(false);
+  const assessmentRef = useRef(null);
+  const [message, setMessage] = useState("");
+  const [scanPhase, setScanPhase] = useState(null);
   const [classification, setClassification] = useState(null);
-  const [explanation, setExplanation]   = useState(null);
-  const [error, setError]               = useState(null);
-  const [tooShort, setTooShort]         = useState(false);
+  const [explanation, setExplanation] = useState(null);
+  const [error, setError] = useState(null);
+  const [tooShort, setTooShort] = useState(false);
 
-  // Allow pressing Enter on the landing screen to proceed
-  useEffect(() => {
-    if (!showLanding) return;
-    function onKey(e) {
-      if (e.key === "Enter") handleEnter();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showLanding]);
+  const isScanning = scanPhase !== null;
 
-  function handleEnter() {
-    setShowLanding(false);
-    setEntered(true);
+  function scrollToAssessment() {
+    requestAnimationFrame(() => {
+      assessmentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
-  async function handleScan() {
-    const trimmed = message.trim();
-    if (!trimmed) return;
+  function handleMessageChange(nextMessage) {
+    setMessage(nextMessage);
+    if (classification || explanation || error || tooShort) {
+      setClassification(null);
+      setExplanation(null);
+      setError(null);
+      setTooShort(false);
+    }
+  }
 
-    // ── Short-text guard ───────────────────────────────────────────────
+  async function handleScan(event) {
+    event?.preventDefault();
+    const trimmed = message.trim();
+    if (!trimmed || isScanning) return;
+
+    setError(null);
+    scrollToAssessment();
+
     if (trimmed.length < MIN_CHARS) {
       setTooShort(true);
       setClassification(TOO_SHORT_CLASSIFICATION);
       setExplanation(TOO_SHORT_EXPLANATION);
-      setError(null);
       return;
     }
 
-    // ── Full analysis ─────────────────────────────────────────────────
     setTooShort(false);
-    setScanning(true);
-    setError(null);
     setClassification(null);
     setExplanation(null);
+    setScanPhase("classify");
+
+    let completedClassification = null;
 
     try {
-      const cls = await classifyMessage(trimmed);
-      setClassification(cls);
-      const exp = await explainVerdict(trimmed, cls.is_scam, cls.confidence);
-      setExplanation(exp);
-    } catch (err) {
-      setError(err.message);
+      completedClassification = await classifyMessage(trimmed);
+      setClassification(completedClassification);
+      setScanPhase("explain");
+      const completedExplanation = await explainVerdict(
+        trimmed,
+        completedClassification.is_scam,
+        completedClassification.confidence
+      );
+      setExplanation(completedExplanation);
+      scrollToAssessment();
+    } catch (requestError) {
+      if (completedClassification) setClassification(completedClassification);
+      setError(requestError.message);
+      scrollToAssessment();
     } finally {
-      setScanning(false);
+      setScanPhase(null);
     }
   }
 
@@ -93,229 +120,152 @@ export default function Home() {
     setTooShort(false);
   }
 
-  // Live character count for feedback
-  const charCount    = message.trim().length;
-  const nearThreshold = charCount > 0 && charCount < MIN_CHARS;
-
   return (
-    <>
-      {/* Splash screen — mounts on top of the app until dismissed */}
-      {showLanding && <LandingScreen onEnter={handleEnter} />}
+    <div className="min-h-screen">
+      <header className="glass-nav sticky top-0 z-50 border-b border-white/10">
+        <div className="app-container flex h-16 items-center justify-between gap-5">
+          <a href="#top" className="flex items-center gap-2 rounded-full" aria-label="RecruiterCheck home">
+            <span className="brand-mark" aria-hidden="true">R</span>
+            <span className="brand-wordmark text-base font-semibold">RecruiterCheck</span>
+          </a>
 
-      {/* Main app — hidden until splash is dismissed */}
-      {!showLanding && (
-        <div className={`flex-1 flex flex-col ${entered ? "anim-app-enter" : ""}`}>
+          <nav className="hidden items-center gap-9 text-sm font-medium text-muted md:flex" aria-label="Primary navigation">
+            <a className="transition hover:text-foreground" href="#analyzer">Analyze</a>
+            <a className="transition hover:text-foreground" href="#how-it-works">How it works</a>
+            <a className="transition hover:text-foreground" href="#playbook">Playbook</a>
+          </nav>
 
-      {/* ─── Header ─── */}
-      <header className="border-b border-border/70 backdrop-blur-md sticky top-0 z-50 bg-background/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-
-          {/* Text-only wordmark */}
-          <div className="flex items-center">
-            <div>
-              <h1 className="text-[15px] font-extrabold tracking-tight logo-text leading-none">
-                RecruiterCheck
-              </h1>
-              <p className="text-[10px] text-muted mt-0.5 tracking-widest uppercase">
-                AI Scam Detection
-              </p>
-            </div>
-          </div>
-
-          {/* Model badge */}
-          <div className="flex items-center gap-2 rounded-full border border-accent/20 bg-accent-soft px-3.5 py-1.5">
-            <span
-              className="h-1.5 w-1.5 rounded-full bg-accent"
-              style={{ animation: "pulse-ring 1.6s infinite" }}
-            />
-            <span className="text-[11px] font-medium text-accent tracking-wide">
-              DistilBERT + Llama 3.1
-            </span>
-          </div>
+          <a href="#analyzer" className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-[#07111d] transition hover:bg-accent-strong">
+            Try it
+          </a>
         </div>
       </header>
 
-      {/* ─── Hero ─── */}
-      <section className="mx-auto w-full max-w-6xl px-6 pt-12 pb-8 text-center">
-        <p className="text-xs font-bold uppercase tracking-[0.28em] text-accent/60 mb-4">
-          AI-Powered Job Scam Detection
-        </p>
-        <h2 className="logo-text text-5xl font-extrabold tracking-tight leading-none mb-5 sm:text-6xl">
-          RECRUITER CHECK
-        </h2>
-        <p className="mx-auto max-w-xl text-sm text-muted leading-relaxed">
-          Paste any recruiter email, LinkedIn DM, or job offer below. Our fine-tuned
-          classifier and LLM reasoning engine analyze it in seconds and surface red
-          flags before you respond.
-        </p>
-      </section>
-
-      {/* ─── Main Content ─── */}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-12 space-y-6">
-
-        {/* Input / Results grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-          {/* Left: Input panel */}
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-4 shadow-sm shadow-accent/5">
-            <div>
-              <h3 className="text-[13px] font-semibold text-foreground uppercase tracking-wider">
-                Paste Recruiter Message
-              </h3>
-              <p className="mt-1 text-xs text-muted">
-                Works with emails, LinkedIn DMs, SMS messages and job postings
-              </p>
+      <main id="top">
+        <section className="hero-shell overflow-hidden px-5 pb-16 pt-20 text-center sm:pb-24 sm:pt-28">
+          <div className="mx-auto max-w-5xl">
+            <p className="intro-reveal text-lg font-semibold tracking-[-0.02em] text-accent" style={{ "--delay": "40ms" }}>
+              Recruiter outreach, decoded.
+            </p>
+            <h1 className="intro-reveal mt-2 text-[clamp(3.4rem,9vw,7rem)] font-semibold leading-[0.94] tracking-[-0.075em] text-foreground" style={{ "--delay": "100ms" }}>
+              Know before
+              <span className="block text-[#8e98a5]">you reply.</span>
+            </h1>
+            <p className="intro-reveal mx-auto mt-7 max-w-2xl text-lg font-medium leading-7 tracking-[-0.025em] text-muted sm:text-2xl sm:leading-8" style={{ "--delay": "160ms" }}>
+              A clear second opinion for recruiter emails, job offers, and direct messages—before you share, pay, or respond.
+            </p>
+            <div className="intro-reveal mt-8 flex items-center justify-center gap-6 text-base sm:text-lg" style={{ "--delay": "220ms" }}>
+              <a href="#analyzer" className="rounded-full bg-accent px-6 py-3 text-sm font-semibold text-[#07111d] transition hover:bg-accent-strong sm:text-base">Analyze a message</a>
+              <a href="#how-it-works" className="apple-link">See how it works ›</a>
             </div>
 
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Hi! We found your resume online and would like to offer you a remote position as a Data Optimization Specialist paying $50/hr…"
-              className="h-52 w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted/40 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/15"
-            />
-
-            {/* Character length hint */}
-            {nearThreshold && (
-              <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning-soft px-3 py-2">
-                <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5 flex-shrink-0 text-warning" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M8 2L1.5 13h13L8 2z" />
-                  <path d="M8 6v3.5M8 11v.5" />
-                </svg>
-                <p className="text-xs text-warning font-medium">
-                  {charCount} of {MIN_CHARS} characters. Add more detail for an accurate result.
-                </p>
-              </div>
-            )}
-
-            {/* Quick example chips */}
-            <div className="flex flex-wrap gap-2">
-              {EXAMPLES.map((ex) => (
-                <button
-                  key={ex.id}
-                  onClick={() => setMessage(ex.message)}
-                  className="group flex items-center gap-1.5 rounded-lg border border-border bg-surface-elevated px-2.5 py-1.5 text-[11px] font-medium text-muted hover:border-border-hover hover:text-foreground"
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      ex.tag === "SCAM" ? "bg-danger" : "bg-success"
-                    }`}
-                  />
-                  {ex.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-1">
-              <button
-                onClick={handleScan}
-                disabled={!message.trim() || scanning}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-accent/20 hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-              >
-                {scanning ? (
-                  <>
-                    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Analyzing…
-                  </>
-                ) : (
-                  "Run Security Scan"
-                )}
-              </button>
-
-              {classification && (
-                <button
-                  onClick={handleReset}
-                  className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted hover:bg-surface-elevated hover:text-foreground"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-
-            {error && (
-              <p className="rounded-lg bg-danger-soft border border-danger/20 px-3 py-2 text-xs text-danger">
-                {error}
-              </p>
-            )}
-          </div>
-
-          {/* Right: Results panel */}
-          <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm shadow-accent/5">
-
-            {/* Empty state */}
-            {!classification && !scanning && (
-              <div className="flex h-full flex-col items-center justify-center text-center py-12">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-elevated ring-1 ring-border">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-accent/50" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-semibold text-foreground">Awaiting Analysis</h3>
-                <p className="mt-2 max-w-[230px] text-xs text-muted leading-relaxed">
-                  Paste a recruiter message and run the security scan to see a detailed verdict.
-                </p>
-              </div>
-            )}
-
-            {/* Scanning spinner */}
-            {scanning && (
-              <div className="flex h-full flex-col items-center justify-center text-center py-12 gap-4">
-                <svg className="h-9 w-9 animate-spin text-accent" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-medium text-foreground">Running classifier & LLM…</p>
-                  <p className="mt-1 text-xs text-muted">Usually 2–4 seconds</p>
-                </div>
-              </div>
-            )}
-
-            {/* Too-short banner + VerdictCard */}
-            {classification && explanation && (
-              <>
-                {tooShort && (
-                  <div className="mb-4 flex items-start gap-3 rounded-xl border border-warning/30 bg-warning-soft px-4 py-3">
-                    <svg viewBox="0 0 16 16" fill="none" className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M8 2L1.5 13h13L8 2z" />
-                      <path d="M8 6v3.5M8 11v.5" />
-                    </svg>
-                    <div>
-                      <p className="text-xs font-semibold text-warning">Text too short to analyze</p>
-                      <p className="text-xs text-warning/80 mt-0.5">
-                        We need at least {MIN_CHARS} characters for a reliable verdict. A neutral score of 55% is shown.
-                        Paste the full message for accurate results.
-                      </p>
-                    </div>
+            <div className="hero-preview intro-reveal mx-auto mt-14 max-w-4xl overflow-hidden rounded-[2rem] border border-white/10 bg-[#10141a] p-3 text-left sm:mt-20 sm:p-4" style={{ "--delay": "280ms" }} aria-hidden="true">
+              <div className="rounded-[1.35rem] bg-surface p-5 sm:p-8">
+                <div className="flex items-center justify-between border-b border-white/10 pb-5">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                   </div>
-                )}
-                <VerdictCard classification={classification} explanation={explanation} />
-              </>
-            )}
+                  <span className="text-[11px] font-medium text-muted">Private analysis</span>
+                </div>
+                <div className="grid gap-5 pt-6 md:grid-cols-[1.2fr_0.8fr] md:items-center">
+                  <div className="rounded-2xl bg-surface-elevated p-5 text-sm leading-6 text-foreground/80">
+                    “We found your profile and would like to offer you a remote role. Please add our hiring manager on Telegram to continue…”
+                  </div>
+                  <div className="rounded-2xl bg-danger-soft p-5">
+                    <p className="text-xs font-semibold text-danger">Potential scam</p>
+                    <p className="mt-2 text-2xl font-semibold tracking-[-0.04em]">3 risk signals found.</p>
+                    <p className="mt-2 text-xs leading-5 text-muted">Off-platform redirect · Unverified contact · Immediate offer</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Simulator */}
-        <Simulator
-          message={classification && !tooShort ? message : null}
-          isScam={!tooShort && classification?.is_scam}
-        />
+        <section id="analyzer" className="analyzer-shell scroll-mt-20 py-20 sm:py-28">
+          <div className="app-container">
+            <div className="mx-auto mb-12 max-w-3xl text-center sm:mb-16">
+              <p className="text-base font-semibold text-accent">Analyze in seconds</p>
+              <h2 className="mt-2 text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.06em]">Paste. Check. Understand.</h2>
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted sm:text-lg">No account. No complicated setup. Just the message and a clear explanation of what deserves your attention.</p>
+            </div>
+
+            <div className="grid items-stretch gap-5 xl:grid-cols-2">
+              <AnalyzerForm
+                message={message}
+                onMessageChange={handleMessageChange}
+                onSubmit={handleScan}
+                onClear={handleReset}
+                isScanning={isScanning}
+                scanPhase={scanPhase}
+                hasResult={Boolean(classification || error)}
+                minChars={MIN_CHARS}
+              />
+              <div ref={assessmentRef} className="scroll-mt-16">
+                <AnalysisPanel
+                  classification={classification}
+                  explanation={explanation}
+                  isScanning={isScanning}
+                  scanPhase={scanPhase}
+                  error={error}
+                  tooShort={tooShort}
+                  minChars={MIN_CHARS}
+                  onRetry={handleScan}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="how-it-works" className="content-shell scroll-mt-20 py-20 sm:py-28">
+          <div className="app-container">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-base font-semibold text-accent">Designed for clarity</p>
+                <h2 className="mt-2 max-w-3xl text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.06em]">A safer next step starts here.</h2>
+              </div>
+              <a href="#analyzer" className="apple-link shrink-0 text-lg">Try the analyzer ›</a>
+            </div>
+
+            <div className="mt-12 grid gap-5 lg:grid-cols-3">
+              {STEPS.map((step) => (
+                <article key={step.number} className={`min-h-[25rem] overflow-hidden rounded-[2rem] p-7 sm:p-9 ${step.className}`}>
+                  <p className="font-mono text-sm text-muted">{step.number}</p>
+                  <h3 className="mt-24 text-3xl font-semibold tracking-[-0.045em] sm:text-4xl">{step.title}</h3>
+                  <p className="mt-4 text-base leading-7 text-muted">{step.description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="playbook" className="scroll-mt-12 bg-[#07090c] py-20 sm:py-28">
+          <div className="app-container">
+            <div className="mx-auto mb-12 max-w-3xl text-center sm:mb-16">
+              <p className="text-base font-semibold text-accent">Learn the pattern</p>
+              <h2 className="mt-2 text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.06em] text-white">See what can happen next.</h2>
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted sm:text-lg">Explore the common stages of a recruiter scam in a safe, educational simulation.</p>
+            </div>
+            <Simulator
+              key={classification ? `${classification.verdict_tier}-${message}` : "no-analysis"}
+              message={classification && !tooShort ? message : null}
+              isScam={!tooShort && classification?.is_scam}
+            />
+          </div>
+        </section>
       </main>
 
-      {/* ─── Footer ─── */}
-      <footer className="border-t border-border/60">
-        <div className="mx-auto max-w-6xl px-6 py-4">
-          <p className="text-center text-[11px] text-muted">
-            RecruiterCheck · Fine-tuned DistilBERT + Llama 3.1 · For educational use only
-          </p>
+      <footer className="border-t border-white/10 bg-[#080a0d]">
+        <div className="app-container py-10 text-xs leading-5 text-muted">
+          <p className="border-b border-white/10 pb-5">RecruiterCheck provides educational guidance, not a guarantee of legitimacy. Always verify employers through official company channels.</p>
+          <div className="flex flex-col gap-2 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p>Copyright © 2026 RecruiterCheck.</p>
+            <p>Private analysis · No account required</p>
+          </div>
         </div>
       </footer>
     </div>
-      )}
-    </>
   );
 }
